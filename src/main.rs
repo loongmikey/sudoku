@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 mod game;
 mod generator;
+mod i18n;
 mod solver;
 mod ui;
 

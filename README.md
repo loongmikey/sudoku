@@ -50,6 +50,7 @@ src/
 ├── lib.rs         # Crate root, module declarations
 ├── game.rs        # Core game state, cell status, undo/redo, conflict detection
 ├── generator.rs   # Puzzle generation with uniqueness verification
+├── i18n.rs        # User-facing string resources (Chinese, default)
 ├── solver.rs      # Backtracking solver (MRV heuristic), solution counter
 └── ui.rs          # egui UI: grid rendering, controls, themes, keyboard input
 ```

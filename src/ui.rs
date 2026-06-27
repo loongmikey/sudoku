@@ -1,5 +1,6 @@
 use crate::game::{CellStatus, GameState, PencilMarks, BOARD, SIZE};
 use crate::generator::Difficulty;
+use crate::i18n;
 use eframe::egui;
 use egui::Color32;
 
@@ -105,15 +106,6 @@ impl ThemeColors {
 const THEME_KEY: &str = "sudoku_dark_theme";
 const SAVE_KEY: &str = "sudoku_save";
 
-fn label_for_difficulty(d: Difficulty) -> &'static str {
-    match d {
-        Difficulty::Easy => "简单",
-        Difficulty::Medium => "中等",
-        Difficulty::Hard => "困难",
-        Difficulty::Expert => "专家",
-    }
-}
-
 pub struct SudokuApp {
     state: Option<GameState>,
     selected_cell: i32,
@@ -166,7 +158,7 @@ impl SudokuApp {
 
     fn start_new_game(&mut self) {
         let (puzzle, solution) = crate::generator::generate(self.difficulty);
-        let label = label_for_difficulty(self.difficulty);
+        let label = i18n::difficulty_label(self.difficulty);
         self.state = Some(GameState::new(
             puzzle,
             solution,
@@ -455,7 +447,7 @@ impl SudokuApp {
 
             ui.separator();
             ui.label(
-                egui::RichText::new(format!("错误 {error_count}"))
+                egui::RichText::new(i18n::errors(error_count))
                     .size(12.0)
                     .color(colors.text),
             );
@@ -463,7 +455,7 @@ impl SudokuApp {
             ui.separator();
             let elapsed = self.elapsed_duration(state);
             ui.label(
-                egui::RichText::new(format!("时间 {}", Self::format_time(elapsed)))
+                egui::RichText::new(i18n::elapsed_time(&Self::format_time(elapsed)))
                     .size(12.0)
                     .color(colors.text),
             );
@@ -477,7 +469,7 @@ impl SudokuApp {
             if ui
                 .add_sized(
                     [tool_size, tool_size],
-                    egui::Button::new("撤销").frame(true),
+                    egui::Button::new(i18n::undo()).frame(true),
                 )
                 .clicked()
             {
@@ -490,7 +482,7 @@ impl SudokuApp {
             if ui
                 .add_sized(
                     [tool_size, tool_size],
-                    egui::Button::new("重做").frame(true),
+                    egui::Button::new(i18n::redo()).frame(true),
                 )
                 .clicked()
             {
@@ -503,7 +495,7 @@ impl SudokuApp {
             if ui
                 .add_sized(
                     [tool_size, tool_size],
-                    egui::Button::new("清除").frame(true),
+                    egui::Button::new(i18n::clear()).frame(true),
                 )
                 .clicked()
                 && self.selected_cell >= 0
@@ -513,9 +505,9 @@ impl SudokuApp {
             }
 
             let notes_text = if self.pencil_mode {
-                "标注: ON"
+                i18n::pencil_on()
             } else {
-                "标注: OFF"
+                i18n::pencil_off()
             };
             if ui
                 .add_sized(
@@ -535,7 +527,7 @@ impl SudokuApp {
             if ui
                 .add_sized(
                     [tool_size, tool_size],
-                    egui::Button::new(format!("提示 {hint_count}")).frame(true),
+                    egui::Button::new(i18n::hint(hint_count)).frame(true),
                 )
                 .clicked()
                 && self.selected_cell >= 0
@@ -581,7 +573,7 @@ impl SudokuApp {
         if ui
             .add_sized(
                 [ui.available_width(), 40.0],
-                egui::Button::new("新游戏").fill(colors.button_bg),
+                egui::Button::new(i18n::new_game()).fill(colors.button_bg),
             )
             .clicked()
         {
@@ -610,11 +602,11 @@ impl SudokuApp {
                     .corner_radius(8.0)
                     .stroke(egui::Stroke::new(1.0, border))
                     .show(ui, |ui| {
-                        ui.heading("设置");
+                        ui.heading(i18n::settings());
                         ui.separator();
 
                         if let Some(ref st) = self.state {
-                            ui.label(format!("难度: {}", st.difficulty_label));
+                            ui.label(i18n::difficulty_label_text(&st.difficulty_label));
 
                             let filled: usize = st
                                 .current
@@ -623,24 +615,24 @@ impl SudokuApp {
                                 .zip(st.puzzle.iter())
                                 .filter(|(c, p)| !c.is_empty() && !p.is_fixed())
                                 .count();
-                            ui.label(format!("已填: {filled}/81"));
+                            ui.label(i18n::filled(filled));
 
                             let error_count = st.conflict_cells().iter().filter(|&&c| c).count();
-                            ui.label(format!("错误: {error_count}"));
+                            ui.label(i18n::errors(error_count));
 
                             let elapsed = self.elapsed_duration(st);
-                            ui.label(format!("用时: {}", Self::format_time(elapsed)));
+                            ui.label(i18n::elapsed_time(&Self::format_time(elapsed)));
 
                             if st.is_complete() {
-                                ui.label("状态: 已完成");
+                                ui.label(i18n::status_complete());
                             }
 
                             ui.separator();
-                            ui.checkbox(&mut self.auto_marks, "自动标注候选");
+                            ui.checkbox(&mut self.auto_marks, i18n::auto_marks());
                         }
 
                         ui.separator();
-                        if ui.button("关闭").clicked() {
+                        if ui.button(i18n::close()).clicked() {
                             self.show_settings = false;
                         }
                     });
@@ -679,34 +671,35 @@ impl eframe::App for SudokuApp {
         egui::TopBottomPanel::top("header").show(ctx, |ui| {
             let colors = self.colors();
             ui.horizontal(|ui| {
-                ui.heading(egui::RichText::new("数独").color(colors.text).size(18.0));
+                ui.heading(egui::RichText::new(i18n::title()).color(colors.text).size(18.0));
 
                 for &diff in &[
-                    (Difficulty::Easy, "简单"),
-                    (Difficulty::Medium, "中等"),
-                    (Difficulty::Hard, "困难"),
-                    (Difficulty::Expert, "专家"),
+                    Difficulty::Easy,
+                    Difficulty::Medium,
+                    Difficulty::Hard,
+                    Difficulty::Expert,
                 ] {
-                    let is_selected = self.difficulty == diff.0;
-                    let mut btn = egui::Button::new(diff.1).min_size(egui::vec2(50.0, 24.0));
+                    let is_selected = self.difficulty == diff;
+                    let mut btn = egui::Button::new(i18n::difficulty_label(diff))
+                        .min_size(egui::vec2(50.0, 24.0));
                     if is_selected {
                         btn = btn.fill(colors.diff_active);
                     }
                     if ui.add(btn).clicked() {
-                        self.difficulty = diff.0;
+                        self.difficulty = diff;
                         self.start_new_game();
                     }
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                    if ui.button("设置").clicked() {
+                    if ui.button(i18n::settings()).clicked() {
                         self.show_settings = !self.show_settings;
                     }
                     if ui
                         .button(if self.dark_theme_flag {
-                            "浅色"
+                            i18n::light_theme()
                         } else {
-                            "深色"
+                            i18n::dark_theme()
                         })
                         .clicked()
                     {
