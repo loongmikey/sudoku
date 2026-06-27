@@ -7,6 +7,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_NET_RETRY: 5
+  CARGO_HTTP_TIMEOUT: 60
 
 jobs:
   build:
@@ -47,8 +49,11 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Fetch dependencies
+        run: cargo fetch --locked --target ${{ matrix.target }}
+
       - name: Build release
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }}
         timeout-minutes: 30
 
       - name: Package binary
