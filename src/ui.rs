@@ -861,7 +861,7 @@ impl eframe::App for SudokuApp {
 
         // Draw fireworks on top of the grid
         if let Some(ref mut fw) = self.firework {
-            let dt = ctx.input(|i| i.unstable_dt) as f32;
+            let dt = ctx.input(|i| i.unstable_dt);
             fw.update(dt);
             let painter = egui::Painter::new(
                 ctx.clone(),
