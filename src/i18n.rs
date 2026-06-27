@@ -74,6 +74,10 @@ pub fn elapsed_time(formatted: &str) -> String {
     format!("时间 {formatted}")
 }
 
+pub fn best_time(formatted: &str) -> String {
+    format!("最佳: {formatted}")
+}
+
 pub fn status_complete() -> &'static str {
     "状态: 已完成"
 }

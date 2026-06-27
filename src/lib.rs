@@ -8,6 +8,7 @@
 //! - `solver` — Backtracking Sudoku solver that finds all solutions (for uniqueness check).
 //! - `ui` — egui UI: grid rendering, controls, theme switching, timer, status bar.
 
+pub mod fireworks;
 pub mod game;
 pub mod generator;
 pub mod i18n;

@@ -1,8 +1,11 @@
+use crate::fireworks::FireworkEffect;
 use crate::game::{CellStatus, GameState, PencilMarks, BOARD, SIZE};
 use crate::generator::Difficulty;
 use crate::i18n;
 use eframe::egui;
 use egui::Color32;
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 // ── Color palettes ────────────────────────────────────────────────
 
@@ -105,6 +108,10 @@ impl ThemeColors {
 
 const THEME_KEY: &str = "sudoku_dark_theme";
 const SAVE_KEY: &str = "sudoku_save";
+const BEST_TIMES_KEY: &str = "sudoku_best_times";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct BestTimes([f64; 4]);
 
 pub struct SudokuApp {
     state: Option<GameState>,
@@ -118,6 +125,10 @@ pub struct SudokuApp {
     theme_dirty: bool,
     board_changed: bool,
     game_dirty: bool,
+    firework: Option<FireworkEffect>,
+    was_complete: bool,
+    best_times: BestTimes,
+    best_times_dirty: bool,
 }
 
 impl SudokuApp {
@@ -127,6 +138,11 @@ impl SudokuApp {
             .and_then(|s| s.get_string(THEME_KEY))
             .map(|s| s == "true")
             .unwrap_or(true);
+
+        let best_times = cc
+            .storage
+            .and_then(|s| eframe::get_value::<BestTimes>(s, BEST_TIMES_KEY))
+            .unwrap_or(BestTimes([f64::MAX; 4]));
 
         let mut app = SudokuApp {
             state: None,
@@ -140,6 +156,10 @@ impl SudokuApp {
             theme_dirty: false,
             board_changed: true,
             game_dirty: false,
+            firework: None,
+            was_complete: false,
+            best_times,
+            best_times_dirty: false,
         };
 
         // Try to restore saved game state
@@ -169,6 +189,8 @@ impl SudokuApp {
         self.pencil_mode = false;
         self.board_changed = true;
         self.game_dirty = true;
+        self.firework = None;
+        self.was_complete = false;
     }
 
     fn colors(&self) -> ThemeColors {
@@ -459,6 +481,17 @@ impl SudokuApp {
                     .size(12.0)
                     .color(colors.text),
             );
+
+            let best = self.best_times.0[self.difficulty as usize];
+            if best < f64::MAX {
+                ui.label(
+                    egui::RichText::new(i18n::best_time(&Self::format_time(
+                        Duration::from_secs_f64(best),
+                    )))
+                    .size(12.0)
+                    .color(colors.text),
+                );
+            }
         });
 
         ui.separator();
@@ -623,6 +656,13 @@ impl SudokuApp {
                             let elapsed = self.elapsed_duration(st);
                             ui.label(i18n::elapsed_time(&Self::format_time(elapsed)));
 
+                            let best = self.best_times.0[self.difficulty as usize];
+                            if best < f64::MAX {
+                                ui.label(i18n::best_time(&Self::format_time(
+                                    Duration::from_secs_f64(best),
+                                )));
+                            }
+
                             if st.is_complete() {
                                 ui.label(i18n::status_complete());
                             }
@@ -657,6 +697,14 @@ impl eframe::App for SudokuApp {
             }
         }
 
+        // Persist best times
+        if self.best_times_dirty {
+            self.best_times_dirty = false;
+            if let Some(storage) = _frame.storage_mut() {
+                eframe::set_value(storage, BEST_TIMES_KEY, &self.best_times);
+            }
+        }
+
         // Persist game state
         if self.game_dirty {
             self.game_dirty = false;
@@ -671,7 +719,11 @@ impl eframe::App for SudokuApp {
         egui::TopBottomPanel::top("header").show(ctx, |ui| {
             let colors = self.colors();
             ui.horizontal(|ui| {
-                ui.heading(egui::RichText::new(i18n::title()).color(colors.text).size(18.0));
+                ui.heading(
+                    egui::RichText::new(i18n::title())
+                        .color(colors.text)
+                        .size(18.0),
+                );
 
                 for &diff in &[
                     Difficulty::Easy,
@@ -785,8 +837,44 @@ impl eframe::App for SudokuApp {
                     self.board_changed = false;
                     self.game_dirty = true;
                 }
+
+                // Completion detection
+                let is_complete = state.is_complete();
+                if is_complete && !self.was_complete {
+                    state.timer_running = false;
+                    self.game_dirty = true;
+                    let grid_center = egui::pos2(
+                        ctx.screen_rect().center().x,
+                        ctx.screen_rect().center().y - 50.0,
+                    );
+                    self.firework = Some(FireworkEffect::new(grid_center));
+
+                    let diff_idx = self.difficulty as usize;
+                    if state.elapsed_secs < self.best_times.0[diff_idx] {
+                        self.best_times.0[diff_idx] = state.elapsed_secs;
+                        self.best_times_dirty = true;
+                    }
+                }
+                self.was_complete = is_complete;
             }
         });
+
+        // Draw fireworks on top of the grid
+        if let Some(ref mut fw) = self.firework {
+            let dt = ctx.input(|i| i.unstable_dt) as f32;
+            fw.update(dt);
+            let painter = egui::Painter::new(
+                ctx.clone(),
+                egui::LayerId::new(egui::Order::Foreground, egui::Id::new("fireworks")),
+                ctx.screen_rect(),
+            );
+            fw.draw(&painter);
+            if fw.is_finished() {
+                self.firework = None;
+            } else {
+                ctx.request_repaint();
+            }
+        }
 
         // ── Keyboard input ────────────────────────────────────────
         ctx.input(|i| {

@@ -4,6 +4,7 @@
 
 use std::sync::Arc;
 
+mod fireworks;
 mod game;
 mod generator;
 mod i18n;
