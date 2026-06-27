@@ -151,9 +151,9 @@ impl SudokuApp {
         };
 
         // Try to restore saved game state
-        let restored = cc.storage.and_then(|s| {
-            eframe::get_value::<GameState>(s, SAVE_KEY)
-        });
+        let restored = cc
+            .storage
+            .and_then(|s| eframe::get_value::<GameState>(s, SAVE_KEY));
         if let Some(saved_state) = restored {
             app.difficulty = saved_state.difficulty.into();
             app.state = Some(saved_state);
@@ -167,7 +167,12 @@ impl SudokuApp {
     fn start_new_game(&mut self) {
         let (puzzle, solution) = crate::generator::generate(self.difficulty);
         let label = label_for_difficulty(self.difficulty);
-        self.state = Some(GameState::new(puzzle, solution, label.to_string(), self.difficulty.into()));
+        self.state = Some(GameState::new(
+            puzzle,
+            solution,
+            label.to_string(),
+            self.difficulty.into(),
+        ));
         self.selected_cell = -1;
         self.pencil_mode = false;
         self.board_changed = true;
@@ -470,7 +475,10 @@ impl SudokuApp {
         let tool_size = 40.0;
         ui.horizontal(|ui| {
             if ui
-                .add_sized([tool_size, tool_size], egui::Button::new("撤销").frame(true))
+                .add_sized(
+                    [tool_size, tool_size],
+                    egui::Button::new("撤销").frame(true),
+                )
                 .clicked()
             {
                 if let Some(ref mut st) = self.state {
@@ -480,7 +488,10 @@ impl SudokuApp {
             }
 
             if ui
-                .add_sized([tool_size, tool_size], egui::Button::new("重做").frame(true))
+                .add_sized(
+                    [tool_size, tool_size],
+                    egui::Button::new("重做").frame(true),
+                )
                 .clicked()
             {
                 if let Some(ref mut st) = self.state {
@@ -490,7 +501,10 @@ impl SudokuApp {
             }
 
             if ui
-                .add_sized([tool_size, tool_size], egui::Button::new("清除").frame(true))
+                .add_sized(
+                    [tool_size, tool_size],
+                    egui::Button::new("清除").frame(true),
+                )
                 .clicked()
                 && self.selected_cell >= 0
             {
@@ -546,12 +560,8 @@ impl SudokuApp {
                 for col in 0..3u8 {
                     let num = row * 3 + col + 1;
                     let label = num.to_string();
-                    let btn = egui::Button::new(&label)
-                        .fill(colors.numpad_bg)
-                        .frame(true);
-                    if ui
-                        .add_sized([btn_w.max(20.0), 44.0], btn)
-                        .clicked()
+                    let btn = egui::Button::new(&label).fill(colors.numpad_bg).frame(true);
+                    if ui.add_sized([btn_w.max(20.0), 44.0], btn).clicked()
                         && self.selected_cell >= 0
                     {
                         let idx = self.selected_cell as usize;
@@ -615,8 +625,7 @@ impl SudokuApp {
                                 .count();
                             ui.label(format!("已填: {filled}/81"));
 
-                            let error_count =
-                                st.conflict_cells().iter().filter(|&&c| c).count();
+                            let error_count = st.conflict_cells().iter().filter(|&&c| c).count();
                             ui.label(format!("错误: {error_count}"));
 
                             let elapsed = self.elapsed_duration(st);
@@ -679,8 +688,7 @@ impl eframe::App for SudokuApp {
                     (Difficulty::Expert, "专家"),
                 ] {
                     let is_selected = self.difficulty == diff.0;
-                    let mut btn = egui::Button::new(diff.1)
-                        .min_size(egui::vec2(50.0, 24.0));
+                    let mut btn = egui::Button::new(diff.1).min_size(egui::vec2(50.0, 24.0));
                     if is_selected {
                         btn = btn.fill(colors.diff_active);
                     }
@@ -690,25 +698,22 @@ impl eframe::App for SudokuApp {
                     }
                 }
 
-                ui.with_layout(
-                    egui::Layout::right_to_left(egui::Align::TOP),
-                    |ui| {
-                        if ui.button("设置").clicked() {
-                            self.show_settings = !self.show_settings;
-                        }
-                        if ui
-                            .button(if self.dark_theme_flag {
-                                "浅色"
-                            } else {
-                                "深色"
-                            })
-                            .clicked()
-                        {
-                            self.dark_theme_flag = !self.dark_theme_flag;
-                            self.theme_dirty = true;
-                        }
-                    },
-                );
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    if ui.button("设置").clicked() {
+                        self.show_settings = !self.show_settings;
+                    }
+                    if ui
+                        .button(if self.dark_theme_flag {
+                            "浅色"
+                        } else {
+                            "深色"
+                        })
+                        .clicked()
+                    {
+                        self.dark_theme_flag = !self.dark_theme_flag;
+                        self.theme_dirty = true;
+                    }
+                });
             });
         });
 
@@ -719,11 +724,15 @@ impl eframe::App for SudokuApp {
         // ── Central panel: grid (left) + controls (right) ─────────
         egui::CentralPanel::default().show(ctx, |ui| {
             // Compute conflicts once per frame
-            let (conflicts, error_count) = self.state.as_ref().map(|st| {
-                let c = st.conflict_cells();
-                let err = c.iter().filter(|&&x| x).count();
-                (c, err)
-            }).unwrap_or_else(|| ([false; BOARD], 0));
+            let (conflicts, error_count) = self
+                .state
+                .as_ref()
+                .map(|st| {
+                    let c = st.conflict_cells();
+                    let err = c.iter().filter(|&&x| x).count();
+                    (c, err)
+                })
+                .unwrap_or_else(|| ([false; BOARD], 0));
 
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {

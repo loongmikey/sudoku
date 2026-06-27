@@ -42,9 +42,7 @@ fn main() -> Result<(), eframe::Error> {
     }
 
     if !font_loaded {
-        eprintln!(
-            "WARNING: No CJK font found. Chinese text may render as tofu/boxes."
-        );
+        eprintln!("WARNING: No CJK font found. Chinese text may render as tofu/boxes.");
     }
 
     // Put Chinese font first for Proportional and Monospace families (highest priority)

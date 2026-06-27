@@ -108,7 +108,12 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new(puzzle: [u8; 81], solution: [u8; 81], difficulty_label: String, difficulty: u8) -> Self {
+    pub fn new(
+        puzzle: [u8; 81],
+        solution: [u8; 81],
+        difficulty_label: String,
+        difficulty: u8,
+    ) -> Self {
         let mut cells = vec![CellStatus::Empty; BOARD];
         for (i, &v) in puzzle.iter().enumerate() {
             if v != 0 {
@@ -297,11 +302,17 @@ impl GameState {
                 let mut used = [false; 10];
                 for c in 0..SIZE {
                     let ri = row * SIZE + c;
-                    if let Some(v) = self.puzzle[ri].value().or_else(|| self.current.cells[ri].value()) {
+                    if let Some(v) = self.puzzle[ri]
+                        .value()
+                        .or_else(|| self.current.cells[ri].value())
+                    {
                         used[v as usize] = true;
                     }
                     let ci = c * SIZE + col;
-                    if let Some(v) = self.puzzle[ci].value().or_else(|| self.current.cells[ci].value()) {
+                    if let Some(v) = self.puzzle[ci]
+                        .value()
+                        .or_else(|| self.current.cells[ci].value())
+                    {
                         used[v as usize] = true;
                     }
                 }
@@ -310,7 +321,10 @@ impl GameState {
                 for r in br..br + BOX {
                     for c in bc..bc + BOX {
                         let bi = r * SIZE + c;
-                        if let Some(v) = self.puzzle[bi].value().or_else(|| self.current.cells[bi].value()) {
+                        if let Some(v) = self.puzzle[bi]
+                            .value()
+                            .or_else(|| self.current.cells[bi].value())
+                        {
                             used[v as usize] = true;
                         }
                     }
@@ -343,27 +357,15 @@ mod integration_tests {
     fn test_full_game_flow() {
         // Create a game with the classic Wikipedia puzzle (Easy difficulty)
         let puzzle = [
-            5,3,0,0,7,0,0,0,0,
-            6,0,0,1,9,5,0,0,0,
-            0,9,8,0,0,0,0,6,0,
-            8,0,0,0,6,0,0,0,3,
-            4,0,0,8,0,3,0,0,1,
-            7,0,0,0,2,0,0,0,6,
-            0,6,0,0,0,0,2,8,0,
-            0,0,0,4,1,9,0,0,5,
-            0,0,0,0,8,0,0,7,9,
+            5, 3, 0, 0, 7, 0, 0, 0, 0, 6, 0, 0, 1, 9, 5, 0, 0, 0, 0, 9, 8, 0, 0, 0, 0, 6, 0, 8, 0,
+            0, 0, 6, 0, 0, 0, 3, 4, 0, 0, 8, 0, 3, 0, 0, 1, 7, 0, 0, 0, 2, 0, 0, 0, 6, 0, 6, 0, 0,
+            0, 0, 2, 8, 0, 0, 0, 0, 4, 1, 9, 0, 0, 5, 0, 0, 0, 0, 8, 0, 0, 7, 9,
         ];
 
         let solution: [u8; 81] = [
-            5,3,4,6,7,8,9,1,2,
-            6,7,2,1,9,5,3,4,8,
-            1,9,8,3,4,2,5,6,7,
-            8,5,9,7,6,1,4,2,3,
-            4,2,6,8,5,3,7,9,1,
-            7,1,3,9,2,4,8,5,6,
-            9,6,1,5,3,7,2,8,4,
-            2,8,7,4,1,9,6,3,5,
-            3,4,5,2,8,6,1,7,9,
+            5, 3, 4, 6, 7, 8, 9, 1, 2, 6, 7, 2, 1, 9, 5, 3, 4, 8, 1, 9, 8, 3, 4, 2, 5, 6, 7, 8, 5,
+            9, 7, 6, 1, 4, 2, 3, 4, 2, 6, 8, 5, 3, 7, 9, 1, 7, 1, 3, 9, 2, 4, 8, 5, 6, 9, 6, 1, 5,
+            3, 7, 2, 8, 4, 2, 8, 7, 4, 1, 9, 6, 3, 5, 3, 4, 5, 2, 8, 6, 1, 7, 9,
         ];
         let mut game = GameState::new(puzzle, solution, "Easy".to_string(), 0);
 
@@ -430,7 +432,12 @@ mod integration_tests {
         game.auto_pencil_marks();
 
         for i in 0..9 {
-            assert_eq!(game.current.pencils[i].digits().1, 0, "Cell {} pencil marks should be empty", i);
+            assert_eq!(
+                game.current.pencils[i].digits().1,
+                0,
+                "Cell {} pencil marks should be empty",
+                i
+            );
         }
     }
 
@@ -448,7 +455,10 @@ mod integration_tests {
         let conflicts = game.conflict_cells();
         assert!(conflicts[4], "Cell 4 should be flagged (value 5)");
         assert!(conflicts[8], "Cell 8 should be flagged (value 5)");
-        assert!(!conflicts[0], "Cell 0 should NOT be flagged (value 1 is unique)");
+        assert!(
+            !conflicts[0],
+            "Cell 0 should NOT be flagged (value 1 is unique)"
+        );
     }
 
     #[test]
@@ -489,7 +499,12 @@ mod integration_tests {
         for i in 0..BOARD {
             if !game.puzzle[i].value().is_some() && game.current.pencils[i].digits().1 == 0 {
                 let expected = (i % 9 + 1) as u8;
-                assert_eq!(game.current.cells[i], CellStatus::Filled(expected), "Cell {} should be restored", i);
+                assert_eq!(
+                    game.current.cells[i],
+                    CellStatus::Filled(expected),
+                    "Cell {} should be restored",
+                    i
+                );
             }
         }
 
@@ -502,20 +517,12 @@ mod integration_tests {
     fn test_hint_application() {
         let mut puzzle: [u8; 81] = [0; 81];
         puzzle[..27].copy_from_slice(&[
-            5,3,4,6,7,8,9,1,2,
-            6,7,2,1,9,5,3,4,8,
-            1,9,8,3,4,2,5,6,7,
+            5, 3, 4, 6, 7, 8, 9, 1, 2, 6, 7, 2, 1, 9, 5, 3, 4, 8, 1, 9, 8, 3, 4, 2, 5, 6, 7,
         ]);
         let solution: [u8; 81] = [
-            5,3,4,6,7,8,9,1,2,
-            6,7,2,1,9,5,3,4,8,
-            1,9,8,3,4,2,5,6,7,
-            8,5,9,7,6,1,4,2,3,
-            4,2,6,8,5,3,7,9,1,
-            7,1,3,9,2,4,8,5,6,
-            9,6,1,5,3,7,2,8,4,
-            2,8,7,4,1,9,6,3,5,
-            3,4,5,2,8,6,1,7,9,
+            5, 3, 4, 6, 7, 8, 9, 1, 2, 6, 7, 2, 1, 9, 5, 3, 4, 8, 1, 9, 8, 3, 4, 2, 5, 6, 7, 8, 5,
+            9, 7, 6, 1, 4, 2, 3, 4, 2, 6, 8, 5, 3, 7, 9, 1, 7, 1, 3, 9, 2, 4, 8, 5, 6, 9, 6, 1, 5,
+            3, 7, 2, 8, 4, 2, 8, 7, 4, 1, 9, 6, 3, 5, 3, 4, 5, 2, 8, 6, 1, 7, 9,
         ];
         let mut game = GameState::new(puzzle, solution, "Easy".to_string(), 0);
 
@@ -523,7 +530,11 @@ mod integration_tests {
         game.apply_hint(0);
 
         assert_eq!(game.current.cells[0], CellStatus::Filled(5));
-        assert_eq!(game.current.pencils[0].digits().1, 0, "Pencil marks should be cleared");
+        assert_eq!(
+            game.current.pencils[0].digits().1,
+            0,
+            "Pencil marks should be cleared"
+        );
 
         // Undo should restore to empty (not to puzzle)
         assert!(game.undo());
@@ -548,6 +559,9 @@ mod integration_tests {
         // Pencil marks don't affect can_hint (only filled cells do)
         // Cell 2 is still non-fixed and empty, so it's hintable
         game.current.pencils[2].with_digit(7);
-        assert!(game.can_hint(2), "Cell with pencil marks should still be hintable");
+        assert!(
+            game.can_hint(2),
+            "Cell with pencil marks should still be hintable"
+        );
     }
 }
