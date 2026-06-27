@@ -180,7 +180,7 @@ mod tests {
     fn test_is_valid_col() {
         let mut board = [0u8; 81];
         board[0] = 5; // row 0, col 0
-        // Same column, different row — should be invalid
+                      // Same column, different row — should be invalid
         assert!(!is_valid(&board, 4, 0, 5));
         // Different value — should be valid
         assert!(is_valid(&board, 4, 0, 3));
@@ -190,7 +190,7 @@ mod tests {
     fn test_is_valid_box() {
         let mut board = [0u8; 81];
         board[0] = 5; // (0,0), box (0,0)
-        // Same box — should be invalid
+                      // Same box — should be invalid
         assert!(!is_valid(&board, 1, 1, 5));
         // Different box and different row — should be valid
         assert!(is_valid(&board, 1, 4, 5));
@@ -223,10 +223,15 @@ mod tests {
         // Board where cell (0,0) has 0 valid candidates because its row,
         // column, and box collectively contain all digits 1-9.
         let mut board = [0u8; 81];
-        board[1] = 1; board[2] = 2; board[3] = 3;
-        board[4] = 4; board[5] = 5; board[6] = 6;
-        board[7] = 7; board[8] = 8;  // Row 0: 1-8 in cols 1-8
-        board[9] = 9;                // Col 0: 9 at (1,0)
+        board[1] = 1;
+        board[2] = 2;
+        board[3] = 3;
+        board[4] = 4;
+        board[5] = 5;
+        board[6] = 6;
+        board[7] = 7;
+        board[8] = 8; // Row 0: 1-8 in cols 1-8
+        board[9] = 9; // Col 0: 9 at (1,0)
         assert_eq!(solve_all(&board, 2), 0);
     }
 
@@ -234,10 +239,13 @@ mod tests {
     fn test_solve_all_multiple_solutions() {
         // Board with two independent clues should have multiple solutions
         let mut board = [0u8; 81];
-        board[0] = 1;  // (0, 0)
+        board[0] = 1; // (0, 0)
         board[80] = 2; // (8, 8)
         let count = solve_all(&board, 2);
-        assert!(count >= 2, "Under-constrained board should have at least 2 solutions");
+        assert!(
+            count >= 2,
+            "Under-constrained board should have at least 2 solutions"
+        );
     }
 
     #[test]
